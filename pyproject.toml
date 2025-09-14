@@ -1,0 +1,17 @@
+[project]
+name = "goit-pythonweb-hw-08"
+version = "0.1.0"
+description = "Fast Api project"
+readme = "README.md"
+requires-python = ">=3.13"
+
+[dependencies]
+fastapi = "*"
+uvicorn = "*"
+sqlalchemy = "*"
+pydantic = "*"
+psycopg2 = "*"
+black = "*"
+alembic = "*"
+mako = "*"
+asyncpg = "*"
