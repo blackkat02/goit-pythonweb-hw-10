@@ -47,13 +47,14 @@ class ContactCreate(ContactBase):
     pass
 
 
-class Contact(ContactBase):
+class ContactRespons(ContactBase):
     """
     Schema for a full contact object, including the database-generated ID.
 
     This schema is used for returning contact data from the API.
     """
     id: int = Field(description="The unique identifier for the contact.")
+    user_id: int = Field(description="The unique identifier for the user.")
     
     # Configuration to allow Pydantic to create the model from ORM attributes.
     model_config = ConfigDict(from_attributes=True)

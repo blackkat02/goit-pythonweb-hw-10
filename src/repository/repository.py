@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models import ContactsModel
-from src.schemas.schemas import ContactBase, ContactCreate, ContactUpdate, Contact
+from schemas.contacts import ContactBase, ContactCreate, ContactUpdate, ContactRespons
 from typing import List, Optional
 from sqlalchemy import select, extract, or_, and_
 

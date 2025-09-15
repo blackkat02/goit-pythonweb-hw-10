@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from src.database.db import get_async_session
-from src.schemas.schemas import ContactCreate, Contact, ContactUpdate
+from schemas.contacts import ContactCreate, ContactRespons, ContactUpdate
 from src.repository.repository import create_contact, get_contacts, get_contact_by_id, update_contact, delete_contact, search_contacts_repo, get_contacts_upcoming_birthdays
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 
-@router.post("/", response_model=Contact, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ContactRespons, status_code=status.HTTP_201_CREATED)
 async def create_new_contact(contact_in: ContactCreate, db: AsyncSession = Depends(get_async_session)):
     """
     Creates a new contact.
@@ -19,7 +19,7 @@ async def create_new_contact(contact_in: ContactCreate, db: AsyncSession = Depen
     return db_contact
 
 
-@router.get("/", response_model=List[Contact])
+@router.get("/", response_model=List[ContactRespons])
 async def get_all_contacts(
     db: AsyncSession = Depends(get_async_session),
     skip: int = Query(0, ge=0),
@@ -36,7 +36,7 @@ async def get_all_contacts(
     return contacts
 
 
-@router.get("/{contact_id}", response_model=Contact)
+@router.get("/{contact_id}", response_model=ContactRespons)
 async def read_contact(contact_id: int, db: AsyncSession = Depends(get_async_session)):
     """
     Retrieves a single contact by its ID.
@@ -53,7 +53,7 @@ async def read_contact(contact_id: int, db: AsyncSession = Depends(get_async_ses
     return db_contact
 
     
-@router.patch("/{contact_id}", response_model=Contact)
+@router.patch("/{contact_id}", response_model=ContactRespons)
 async def update_existing_contact(
     contact_id: int, 
     contact_update: ContactUpdate, 
@@ -92,7 +92,7 @@ async def delete_existing_contact(contact_id: int, db: AsyncSession = Depends(ge
     return None
 
 
-@router.post("/search", response_model=List[Contact])
+@router.post("/search", response_model=List[ContactRespons])
 async def get_search_contacts(
     query: dict,
     db: AsyncSession = Depends(get_async_session)
@@ -112,7 +112,7 @@ async def get_search_contacts(
     return contacts
 
 
-@router.get("/upcoming_birthdays/", response_model=List[Contact])
+@router.get("/upcoming_birthdays/", response_model=List[ContactRespons])
 async def get_coming_birthday_contacts(db: AsyncSession = Depends(get_async_session)):
     """
     Retrieves contacts with upcoming birthdays in the next 7 days.

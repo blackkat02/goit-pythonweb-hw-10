@@ -7,7 +7,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class User(Base):
+class UsersModel(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(50), index=True)
