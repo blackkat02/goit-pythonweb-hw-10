@@ -1,18 +1,19 @@
 from datetime import date, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models import ContactsModel
-from schemas.contacts import ContactBase, ContactCreate, ContactUpdate, ContactRespons
+from src.schemas.contacts import ContactBase, ContactCreate, ContactUpdate, ContactRespons
 from typing import List, Optional
 from sqlalchemy import select, extract, or_, and_
 
 
-async def create_contact(db: AsyncSession, contact: ContactCreate) -> ContactsModel:
+async def create_contact(db: AsyncSession, contact: ContactCreate, user_id: int) -> ContactsModel:
     """
     Creates a new contact in the database.
 
     Args:
         db (AsyncSession): The database session.
         contact (ContactCreate): The Pydantic schema with contact data.
+        user_id (int): The ID of the user creating the contact.
 
     Returns:
         ContactsModel: The newly created contact object from the database.
@@ -23,7 +24,8 @@ async def create_contact(db: AsyncSession, contact: ContactCreate) -> ContactsMo
         email=contact.email,
         phone_number=contact.phone_number,
         birthday=contact.birthday,
-        other_info=contact.other_info
+        other_info=contact.other_info,
+        user_id = user_id
     )
     db.add(db_contact)
     await db.commit()

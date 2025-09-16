@@ -1,9 +1,9 @@
 [project]
-name = "goit-pythonweb-hw-08"
+name = "goit-pythonweb-hw-10"
 version = "0.1.0"
 description = "Fast Api project"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 
 [dependencies]
 fastapi = "*"
@@ -15,3 +15,6 @@ black = "*"
 alembic = "*"
 mako = "*"
 asyncpg = "*"
+python-jose = "*"
+redis = "*"
+passlib = "*"

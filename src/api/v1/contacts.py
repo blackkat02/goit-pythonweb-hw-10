@@ -2,20 +2,21 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from src.database.db import get_async_session
-from schemas.contacts import ContactCreate, ContactRespons, ContactUpdate
+from src.schemas.contacts import ContactBase, ContactCreate, ContactRespons, ContactUpdate
+from src.schemas.users import UserBaseSchema, UserCreateSchema, UserLoginSchema, UserResponseSchema, UserUpdateSchema
 from src.repository.repository import create_contact, get_contacts, get_contact_by_id, update_contact, delete_contact, search_contacts_repo, get_contacts_upcoming_birthdays
-
+from src.services.auth import get_current_user
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 
 @router.post("/", response_model=ContactRespons, status_code=status.HTTP_201_CREATED)
-async def create_new_contact(contact_in: ContactCreate, db: AsyncSession = Depends(get_async_session)):
+async def create_new_contact(contact_in: ContactCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_session)):
     """
     Creates a new contact.
     
     This endpoint creates a new contact in the database using the provided data.
     """
-    db_contact = await create_contact(db, contact_in)
+    db_contact = await create_contact(db, contact_in, current_user.id)
     return db_contact
 
 

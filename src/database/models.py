@@ -1,13 +1,14 @@
 from sqlalchemy import Column, Integer, String, DATE, ForeignKey, DateTime, func, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import date, datetime
+from uuid import uuid4  # Тобі потрібно було додати цей імпорт
 
 
 class Base(DeclarativeBase):
     pass
 
 
-class UsersModel(Base):
+class UserModel(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(50), index=True)
@@ -28,4 +29,15 @@ class ContactsModel(Base):
     birthday: Mapped[date] = mapped_column(DATE, nullable=False, index=True)
     other_info: Mapped[str] = mapped_column(String(250), nullable=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    user: Mapped["User"] = relationship(backref="contacts")
+    user: Mapped["UserModel"] = relationship(backref="contacts")
+
+
+class TokenModel(Base):
+    __tablename__ = "tokens"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token: Mapped[str] = mapped_column(String(255), unique=True, default=lambda: str(uuid4()))
+    token_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    
+    user = relationship("UserModel", backref="tokens")

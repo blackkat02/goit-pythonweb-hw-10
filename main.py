@@ -6,7 +6,7 @@ and defines the startup command for the server.
 """
 import uvicorn
 from fastapi import FastAPI
-from src.api.router import router as api_router
+from src.api.v1.router import router as api_router
 
 # Create the FastAPI application instance.
 app = FastAPI(

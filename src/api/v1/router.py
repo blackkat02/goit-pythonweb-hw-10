@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from src.api.v1.endpoints import contacts, utils
+from src.api.v1 import contacts
+from src.api.v1 import utils
 
 # Головний роутер для версіонування API
 router = APIRouter()
