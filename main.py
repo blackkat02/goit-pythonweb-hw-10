@@ -4,6 +4,7 @@ Main entry point for the FastAPI application.
 This module initializes the FastAPI application, includes the API router,
 and defines the startup command for the server.
 """
+
 import uvicorn
 from fastapi import FastAPI
 from src.api.v1.router import router as api_router
@@ -12,7 +13,7 @@ from src.api.v1.router import router as api_router
 app = FastAPI(
     title="Contacts API",  # Provides a title for the OpenAPI documentation
     description="A simple REST API for managing contacts.",  # A description for the OpenAPI docs
-    version="1.0.0"  # API version
+    version="1.0.0",  # API version
 )
 
 # Include the main API router under the `/api` prefix.
