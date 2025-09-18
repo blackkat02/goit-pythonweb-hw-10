@@ -12,3 +12,7 @@ router.include_router(auth.router, prefix="/v1")
 
 # Включаємо утилітарний роутер без префікса версії
 router.include_router(utils.router)
+
+
+
+

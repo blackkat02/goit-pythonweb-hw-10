@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from src.database.db import get_async_session
@@ -19,6 +20,13 @@ from src.repository.contacts import ContactRepository
 from src.services.auth import AuthService
 from src.database.models import UserModel
 
+from src.repository.users import UserRepository
+from src.services.auth import AuthService
+from src.database.models import UserModel
+
+
+# Створюємо екземпляр роутера
+print("Router for contacts is being defined.")
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 

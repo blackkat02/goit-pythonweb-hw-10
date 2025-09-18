@@ -29,34 +29,6 @@ router = APIRouter(prefix="/users", tags=["users"])
 # HTTP 409 Conflict
 
 
-# @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
-# async def signup(
-#     body: UserCreateSchema,
-#     background_tasks: BackgroundTasks,
-#     request: Request,
-#     db: AsyncSession = Depends(get_async_session),
-# ):
-#     """
-#     Registers a new user and sends a confirmation email.
-#     """
-#     user_repo = UserRepository(db)
-#     user = await user_repo.get_user_by_email(body.email)
-    
-#     if user is not None:
-#         raise HTTPException(
-#             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
-#         )
-
-#     hashed_password = await AuthService().hash_password(body.password)
-#     new_user = await user_repo.create_user(body, hashed_password)
-    
-#     background_tasks.add_task(
-#         send_email, new_user.email, new_user.username, str(request.base_url)
-#     )
-    
-#     return new_user
-
-
 @router.get("/", response_model=List[UserResponseSchema])
 async def get_all_users(
     db: AsyncSession = Depends(get_async_session),

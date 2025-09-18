@@ -13,6 +13,8 @@ from src.repository.users import UserRepository
 from src.settings import settings
 # json web token
 
+print("AuthService is being imported.")
+
 
 class AuthService:
     ALGORITHM = "HS256"

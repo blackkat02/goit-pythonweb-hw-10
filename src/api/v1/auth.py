@@ -66,7 +66,7 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_asyn
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
         )
 
-    access_token = await auth_service.create_jwt_token(
+    access_token = auth_service.create_jwt_token(
         payload={"user_email": user.email}
     )
     return {"access_token": access_token}
