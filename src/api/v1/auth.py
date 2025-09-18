@@ -1,5 +1,5 @@
-# from fastapi import Depends, APIRouter, HTTPException, status, BackgroundTasks, Request
-# from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import Depends, APIRouter, HTTPException, status, BackgroundTasks, Request
+from fastapi.security import OAuth2PasswordRequestForm
 from src.database.db import get_db
 from src.schemas.users import UserRegisterSchema, UserResponseSchema, RequestEmail
 from src.repository import auth as auth_repository

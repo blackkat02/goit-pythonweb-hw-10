@@ -78,7 +78,7 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_async_session))
         HTTPException: If the contact with the specified ID is not found.
     """
     user_repo = UserRepository(db)
-    db_user = await user_repo.get_user_by_id(db, user_id)
+    db_user = await user_repo.get_user_by_id(user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found.")
     return db_user

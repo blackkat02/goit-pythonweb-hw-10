@@ -34,7 +34,7 @@ async def create_new_contact(
     This endpoint creates a new contact in the database using the provided data.
     """
     contact_repo = ContactRepository(db)
-    db_contact = await contact_repo.create_contact(db, contact_in, current_user.id)
+    db_contact = await contact_repo.create_contact(contact_in, current_user.id)
     return db_contact
 
 
@@ -68,7 +68,7 @@ async def read_contact(contact_id: int, db: AsyncSession = Depends(get_async_ses
         HTTPException: If the contact with the specified ID is not found.
     """
     contact_repo = ContactRepository(db)
-    db_contact = await contact_repo.get_contact_by_id(db, contact_id)
+    db_contact = await contact_repo.get_contact_by_id(contact_id)
     if db_contact is None:
         raise HTTPException(status_code=404, detail="Contact not found.")
     return db_contact
@@ -92,7 +92,7 @@ async def update_existing_contact(
     """
     contact_repo = ContactRepository(db)
     updated_contact = await contact_repo.update_contact(
-        db, contact_id, contact_update
+        contact_id, contact_update
     )
     if updated_contact is None:
         raise HTTPException(status_code=404, detail="Contact not found.")
@@ -113,7 +113,7 @@ async def delete_existing_contact(
         HTTPException: If the contact with the specified ID is not found.
     """
     contact_repo = ContactRepository(db)
-    deleted = await contact_repo.delete_contact(db, contact_id)
+    deleted = await contact_repo.delete_contact(contact_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Contact not found.")
     return None
@@ -131,7 +131,7 @@ async def get_search_contacts(
     - Multiple keys will perform a search on multiple parameters.
     """
     contact_repo = ContactRepository(db)
-    contacts = await contact_repo.search_contacts_repo(db, query)
+    contacts = await contact_repo.search_contacts_repo(query)
 
     if not contacts:
         raise HTTPException(
@@ -150,4 +150,4 @@ async def get_coming_birthday_contacts(db: AsyncSession = Depends(get_async_sess
     including the current date. It correctly handles month and year transitions.
     """
     contact_repo = ContactRepository(db)
-    return await contact_repo.get_contacts_upcoming_birthdays(db)
+    return await contact_repo.get_contacts_upcoming_birthdays()
