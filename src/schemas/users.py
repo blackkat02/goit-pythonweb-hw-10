@@ -36,7 +36,7 @@ class UserLoginSchema(BaseModel):
     """
 
     email: EmailStr
-    password: str
+    password: str = Field(min_length=6)
 
 
 # --- Схеми для відповіді API ---
@@ -49,7 +49,6 @@ class UserResponseSchema(UserBaseSchema):
     """
 
     id: int
-    # Використовуємо datetime замість str для коректної типізації.
     created_at: datetime
     avatar: Optional[str] = None
     confirmed: bool = False

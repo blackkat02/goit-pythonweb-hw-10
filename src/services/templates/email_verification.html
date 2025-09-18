@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Confirmed</title>
+</head>
+<body>
+    <p>Hi {{username}},</p>
+    <p>Thank you for signing up for our service.</p>
+    <p>Please click the following link to verify your email address:</p>
+    <p>
+        <a href="{{host}}api/auth/confirmed_email/{{token}}">
+            Verification you email
+        </a>
+    </p>
+    <p>If you did not sign up for our service, please ignore this email.</p>
+    <p>Thanks,</p>
+    <p>The Our Team</p>
+</body>
+</html>

@@ -189,3 +189,5 @@ Visual Studio Code
 
 src_dir/
 dest_dir/
+
+.env.docker

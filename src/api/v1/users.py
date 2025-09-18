@@ -29,23 +29,32 @@ router = APIRouter(prefix="/users", tags=["users"])
 # HTTP 409 Conflict
 
 
-@router.post(
-    "/", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED
-)
-async def create_new_user(
-    user_in: UserCreateSchema, db: AsyncSession = Depends(get_async_session)
-):
-    """
-    Creates a new user.
+# @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
+# async def signup(
+#     body: UserCreateSchema,
+#     background_tasks: BackgroundTasks,
+#     request: Request,
+#     db: AsyncSession = Depends(get_async_session),
+# ):
+#     """
+#     Registers a new user and sends a confirmation email.
+#     """
+#     user_repo = UserRepository(db)
+#     user = await user_repo.get_user_by_email(body.email)
+    
+#     if user is not None:
+#         raise HTTPException(
+#             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
+#         )
 
-    This endpoint creates a new user in the database using the provided data.
-    """
-    user_repo = UserRepository(db)
-    # ПРИМІТКА: Цей виклик має бути в сервісному шарі, а не тут.
-    # Я передаю hashed_password для демонстрації, але це не найкраща практика.
-    hashed_password = await AuthService().hash_password(user_in.password)
-    db_user = await user_repo.create_user(user_in, hashed_password)
-    return db_user
+#     hashed_password = await AuthService().hash_password(body.password)
+#     new_user = await user_repo.create_user(body, hashed_password)
+    
+#     background_tasks.add_task(
+#         send_email, new_user.email, new_user.username, str(request.base_url)
+#     )
+    
+#     return new_user
 
 
 @router.get("/", response_model=List[UserResponseSchema])

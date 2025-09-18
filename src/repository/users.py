@@ -19,12 +19,6 @@ class UserRepository:
         Creates a new user in the database.
         """
         db_user = UserModel(
-            # username=user_in.username,
-            # email=user_in.email,
-            # hashed_password=hashed_password,
-            # avatar=user_in.avatar if user_in.avatar else None,
-            # confirmed=user_in.confirmed if user_in.confirmed else False
-
             username=user_in.username,
             email=user_in.email,
             hashed_password=hashed_password,
@@ -50,6 +44,14 @@ class UserRepository:
         Retrieves a user by their email address.
         """
         stmt = select(UserModel).filter(UserModel.email == email)
+        result = await self.db.execute(stmt)
+        return result.scalars().first()
+    
+    async def get_user_by_username(self, username: str) -> Optional[UserModel]:
+        """
+        Retrieves a user by their ID.
+        """
+        stmt = select(UserModel).filter_by(username=username)
         result = await self.db.execute(stmt)
         return result.scalars().first()
 
@@ -83,3 +85,18 @@ class UserRepository:
             await self.db.commit()
             return db_user
         return None
+    
+    async def update_refresh_token(self, user: UserModel, refresh_token: str):
+        """
+        Updates the refresh token for a user.
+        """
+        user.refresh_token = refresh_token
+        await self.db.commit()
+
+    async def get_user_by_refresh_token(self, refresh_token: str) -> Optional[UserModel]:
+        """
+        Retrieves a user by their refresh token.
+        """
+        stmt = select(UserModel).filter(UserModel.refresh_token == refresh_token)
+        result = await self.db.execute(stmt)
+        return result.scalars().first()
