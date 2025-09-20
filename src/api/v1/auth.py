@@ -60,28 +60,28 @@ async def signup(
     
     return new_user
 
-@router.post("/login")
-async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_async_session)):
-    user_repo = UserRepository(db)
-    user = await user_repo.get_user_by_username(body.username)
-    auth_service = AuthService()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email"
-        )
-    if not user.confirmed:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Email is not verified"
-        )
-    if not auth_service.verify_password(body.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
-        )
+# @router.post("/login")
+# async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_async_session)):
+#     user_repo = UserRepository(db)
+#     user = await user_repo.get_user_by_username(body.username)
+#     auth_service = AuthService()
+#     if user is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email"
+#         )
+#     if not user.confirmed:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Email is not verified"
+#         )
+#     if not auth_service.verify_password(body.password, user.hashed_password):
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
+#         )
 
-    access_token = auth_service.create_jwt_token(
-        payload={"user_email": user.email}
-    )
-    return {"access_token": access_token}
+#     access_token = auth_service.create_jwt_token(
+#         payload={"user_email": user.email}
+#     )
+#     return {"access_token": access_token}
 
 
 @router.get("/confirmed_email/{token}")
@@ -135,34 +135,6 @@ async def confirmed_email(token: str, db=Depends(get_async_session)):
 #     return {"message": "Check your email for confirmation."}
 
 
-# @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
-# async def signup(
-#     body: UserCreateSchema,
-#     background_tasks: BackgroundTasks,
-#     request: Request,
-#     db: AsyncSession = Depends(get_async_session),
-# ):
-#     user_repo = UserRepository(db)
-#     existing_user = await user_repo.get_user_by_email(body.email)
-#     if existing_user:
-#         raise HTTPException(
-#             status_code=status.HTTP_409_CONFLICT,
-#             detail="Account with this email already exists",
-#         )
-    
-#     hashed_password = AuthService().hash_password(body.password)
-#     created_user = await user_repo.create_user(body, auth_service)
-
-#     background_tasks.add_task(
-#         auth_service.send_confirmation_email,
-#         email=created_user.email,
-#         username=created_user.username,
-#         host=str(request.base_url)
-#     )
-
-#     return created_user
-
-
 
 import logging
 import asyncio
@@ -177,6 +149,9 @@ async def signup(
     db: AsyncSession = Depends(get_async_session),
     auth_service: AuthService = Depends(get_auth_service),
 ):
+    user_repo = UserRepository(db)
+
+    hashed_password = auth_service.hash_password(body.password)
     # ... валідації, створення користувача ...
     new_user = await user_repo.create_user(body, hashed_password)
 
@@ -188,46 +163,8 @@ async def signup(
     background_tasks.add_task(asyncio.create_task, coro)
     logger.debug("BackgroundTasks: added asyncio.create_task for send_confirmation_email")
 
-    # (повертаємо відповідь)
     return new_user
 
-# @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
-# async def signup(
-#     body: UserCreateSchema,
-#     background_tasks: BackgroundTasks,
-#     request: Request,
-#     db: AsyncSession = Depends(get_async_session),
-#     auth_service: AuthService = Depends(get_auth_service),
-# ):
-#     """
-#     Registers a new user and sends a confirmation email.
-#     """
-#     # Логування вхідних даних
-#     logger.info(f"Received signup request for: {body.email}")
-#     logger.info(f"Request body: {body.model_dump_json()}")
-
-#     # Create the instance first
-#     user_repo = UserRepository(db)
-#     # Then call the method on the instance, passing only the email
-#     user = await user_repo.get_user_by_email(body.email)
-    
-#     if user is not None:
-#         raise HTTPException(
-#             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
-#         )
-
-#     # Continue with the rest of your logic
-#     hashed_password = AuthService().hash_password(body.password)
-#     new_user = await user_repo.create_user(body, hashed_password)
-    
-#     background_tasks.add_task(
-#         auth_service.send_confirmation_email,
-#         email=new_user.email,
-#         username=new_user.username,
-#         host=str(request.base_url)
-#     )
-    
-#     return new_user
 
 @router.post("/request_email")
 async def request_email(
@@ -251,8 +188,8 @@ async def request_email(
         )
     
     await send_email(
-      email=user.email,
-      username=user.username,
+      email=user_repo.email,
+      username=user_repo.username,
       host="http://localhost:8080"
     )
     return {"message": "Confirmation email sent"}
