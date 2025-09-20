@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.database.models import UserModel
 from src.schemas.users import UserCreateSchema, UserUpdateSchema
+from libgravatar import Gravatar
 
 
 class UserRepository:
@@ -100,3 +101,23 @@ class UserRepository:
         stmt = select(UserModel).filter(UserModel.refresh_token == refresh_token)
         result = await self.db.execute(stmt)
         return result.scalars().first()
+
+    async def update_user_avatar(self, user_id: int, new_avatar_url: str) -> Optional[UserModel]:
+        """
+        Updates the avatar URL for a user by their ID.
+        """
+        stmt = select(UserModel).where(UserModel.id == user_id)
+        result = await self.db.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if user:
+            user.avatar = new_avatar_url
+            await self.db.commit()
+            await self.db.refresh(user)
+        return user
+    
+
+    async def change_confirmed_email(self, email: str) -> None:
+        stmt = update(UserModel).where(UserModel.email == email).values(confirmed=True)
+        await self.db.execute(stmt)
+        await self.db.commit()

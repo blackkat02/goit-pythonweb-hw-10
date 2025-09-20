@@ -6,6 +6,8 @@ from fastapi import (
     BackgroundTasks,
     Request,
     Query,
+    UploadFile, 
+    File,
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,14 +21,11 @@ from src.schemas.users import (
     UserUpdateSchema,
 )
 from src.repository.users import UserRepository
-from src.services.auth import AuthService
-
-# from src.repository import auth as auth_repository
-# from src.services.auth import auth_service
-# from src.services.email import send_email
+from src.services.auth import AuthService, get_current_user
+from src.database.models import UserModel
+from src.services.cloudinary_service import CloudinaryService
 
 router = APIRouter(prefix="/users", tags=["users"])
-# HTTP 409 Conflict
 
 
 @router.get("/", response_model=List[UserResponseSchema])
@@ -63,6 +62,21 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_async_session))
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found.")
     return db_user
+
+@router.patch("/avatar", response_model=UserResponseSchema)
+async def update_user_avatar(
+    file: UploadFile = File(...),
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Updates the current user's avatar.
+    """
+    public_id = f"avatars/{current_user.id}"
+    image_url = CloudinaryService.upload_image(file.file, public_id)
+    user_repo = UserRepository(db)
+    updated_user = await user_repo.update_user_avatar(current_user.id, image_url)
+    return updated_user
 
 
 # @router.patch("/{user_id}", response_model=UserResponseSchema)

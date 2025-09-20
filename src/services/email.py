@@ -4,12 +4,12 @@ from pathlib import Path
 from src.services.auth import auth_service
 
 conf = ConnectionConfig(
-    MAIL_USERNAME="debb5a8e45e0ea",
-    MAIL_PASSWORD="a5339708014a52",
-    MAIL_FROM="andrusoleg123@gmail.com",
+    MAIL_USERNAME="a60b74854e5e64",
+    MAIL_PASSWORD="b4b857131be042",
+    MAIL_FROM="boris02374@gmail.com",
     MAIL_PORT=2525,
     MAIL_SERVER="sandbox.smtp.mailtrap.io",
-    MAIL_FROM_NAME="Cats and Owners App",
+    MAIL_FROM_NAME="hw-10 App",
     MAIL_STARTTLS=True,
     MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True,
@@ -18,7 +18,7 @@ conf = ConnectionConfig(
 )
 
 async def send_email(email: str, username: str, host: str):
-    token_verification = await auth_service.create_jwt_token({"email": email}, scope="verification_token")
+    token_verification = auth_service.create_jwt_token({"email": email}, scope="verification_token")
     try:
         message = MessageSchema(
             subject="Confirm your email",
