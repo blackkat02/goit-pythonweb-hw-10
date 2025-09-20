@@ -172,24 +172,62 @@ async def request_email(
     background_tasks: BackgroundTasks,
     request: Request,
     db: AsyncSession = Depends(get_async_session),
+    auth_service: AuthService = Depends(get_auth_service)
 ):
+    """
+    Requests a new confirmation email for a user.
+    """
     user_repo = UserRepository(db)
     user = await user_repo.get_user_by_email(body.email)
     
-    if user:
-        if user.confirmed:
-            return {"message": "Your email is already confirmed"}
-            
-        background_tasks.add_task(
-            auth_service.send_confirmation_email,
-            email=user.email,
-            username=user.username,
-            host=str(request.base_url)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="User not found"
         )
     
-    await send_email(
-      email=user_repo.email,
-      username=user_repo.username,
-      host="http://localhost:8080"
+    if user.confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail="Email is already confirmed"
+        )
+    
+    # Schedule sending the new confirmation email
+    background_tasks.add_task(
+        auth_service.send_confirmation_email,
+        email=user.email,
+        username=user.username,
+        host=str(request.base_url)
     )
-    return {"message": "Confirmation email sent"}
+    
+    return {"message": "New confirmation email sent"}
+
+# @router.post("/request_email")
+# async def request_email(
+#     body: RequestEmailSchema,
+#     background_tasks: BackgroundTasks,
+#     request: Request,
+#     db: AsyncSession = Depends(get_async_session),
+# ):
+#     user_repo = UserRepository(db)
+#     user = await user_repo.get_user_by_email(body.email)
+#     print(user_repo)
+#     print(user)
+    
+#     if user:
+#         if user.confirmed:
+#             return {"message": "Your email is already confirmed"}
+            
+#         background_tasks.add_task(
+#             auth_service.send_confirmation_email,
+#             email=user.email,
+#             username=user.username,
+#             host=str(request.base_url)
+#         )
+    
+#     await auth_service.send_confirmation_email(
+#       email=body.email,
+#       username=auth_service.username,
+#       host="http://localhost:8080"
+#     )
+#     return {"message": "Confirmation email sent"}
