@@ -19,35 +19,46 @@ from libgravatar import Gravatar
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-# @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
-# async def signup(
-#     body: UserCreateSchema,
-#     background_tasks: BackgroundTasks,
-#     request: Request,
-#     db: AsyncSession = Depends(get_async_session),
-# ):
-#     """
-#     Registers a new user and sends a confirmation email.
-#     """
-#     # Create the instance first
-#     user_repo = UserRepository(db)
-#     # Then call the method on the instance, passing only the email
-#     user = await user_repo.get_user_by_email(body.email)
+@router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
+async def signup(
+    body: UserCreateSchema,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    db: AsyncSession = Depends(get_async_session),
+    auth_service: AuthService = Depends(get_auth_service) # Залежність для AuthService
+):
+    """
+    Registers a new user and sends a confirmation email.
+    """
+    user_repo = UserRepository(db)
     
-#     if user is not None:
-#         raise HTTPException(
-#             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
-#         )
+    # Перевіряємо, чи існує користувач
+    user = await user_repo.get_user_by_email(body.email)
+    if user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
+        )
 
-#     # Continue with the rest of your logic
-#     hashed_password = AuthService().hash_password(body.password)
-#     new_user = await user_repo.create_user(body, hashed_password)
+    # Хешуємо пароль за допомогою AuthService
+    hashed_password = auth_service.hash_password(body.password)
     
-#     background_tasks.add_task(
-#         send_email, new_user.email, new_user.username, str(request.base_url)
-#     )
+    # Створюємо користувача в базі даних
+    new_user = await user_repo.create_user(body, hashed_password)
+
+    verification_token = auth_service.create_jwt_token({"email": body.email}, scope="verification_token")
+
+    # Додаємо логування, щоб бачити токен
+    logger.info(f"Generated verification token for {body.email}: {verification_token}")
     
-#     return new_user
+    # Створюємо токен і передаємо його у фонову задачу
+    background_tasks.add_task(
+        auth_service.send_confirmation_email, 
+        new_user.email, 
+        new_user.username, 
+        str(request.base_url)
+    )
+    
+    return new_user
 
 @router.post("/login")
 async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_async_session)):
@@ -76,8 +87,15 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_asyn
 @router.get("/confirmed_email/{token}")
 async def confirmed_email(token: str, db=Depends(get_async_session)):
     user_repo = UserRepository(db)
-    email = await AuthService.decode_verification_token(token)
-    user = await UserRepository.get_user_by_email(email, db)
+    
+    # 1. Створюємо екземпляр AuthService
+    auth_service = AuthService()
+
+    email = await auth_service.decode_verification_token(token)
+    
+    # 2. Використовуємо екземпляр user_repo для отримання користувача
+    user = await user_repo.get_user_by_email(email)
+    
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
@@ -85,7 +103,9 @@ async def confirmed_email(token: str, db=Depends(get_async_session)):
     if user.confirmed:
         return {"message": "Your email is already confirmed"}
 
-    await user_repo.change_confirmed_email(email, db)
+    # 3. Використовуємо екземпляр user_repo для оновлення користувача
+    await user_repo.change_confirmed_email(email)
+    
     return {"message": "Email confirmed"}
 
 
@@ -142,9 +162,7 @@ async def confirmed_email(token: str, db=Depends(get_async_session)):
 
 #     return created_user
 
-import logging
 
-logger = logging.getLogger(__name__)
 
 import logging
 import asyncio
@@ -232,4 +250,9 @@ async def request_email(
             host=str(request.base_url)
         )
     
-    return {"message": "Check your email for confirmation."}
+    await send_email(
+      email=user.email,
+      username=user.username,
+      host="http://localhost:8080"
+    )
+    return {"message": "Confirmation email sent"}
