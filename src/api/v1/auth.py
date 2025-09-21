@@ -25,7 +25,21 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     dependencies=[Depends(RateLimiter(times=10, seconds=60))]
 )
 def read_current_user(current_user: UserModel = Depends(get_current_user)):
+    """
+    Retrieves the current authenticated user's profile.
+
+    This endpoint requires a valid access token. It is used to get details
+    about the logged-in user.
+
+    Args:
+        current_user (UserModel): The user model object obtained from the
+                                  `get_current_user` dependency.
+
+    Returns:
+        UserResponseSchema: The user object containing their profile data.
+    """
     return current_user
+
 
 @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
 async def signup(
@@ -37,28 +51,44 @@ async def signup(
 ):
     """
     Registers a new user and sends a confirmation email.
+
+    This endpoint creates a new user account with a hashed password and schedules a
+    background task to send an email verification link.
+
+    Args:
+        body (UserCreateSchema): The user data for registration.
+        background_tasks (BackgroundTasks): Dependency to run tasks in the background.
+        request (Request): The incoming request object.
+        db (AsyncSession): The database session dependency.
+        auth_service (AuthService): The authentication service dependency.
+
+    Returns:
+        UserResponseSchema: The newly created user object.
+
+    Raises:
+        HTTPException: If an account with the provided email already exists.
     """
     user_repo = UserRepository(db)
     
-    # Перевіряємо, чи існує користувач
+    # Check if user already exists
     user = await user_repo.get_user_by_email(body.email)
     if user is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
         )
 
-    # Хешуємо пароль за допомогою AuthService
+    # Hash the password using AuthService
     hashed_password = auth_service.hash_password(body.password)
     
-    # Створюємо користувача в базі даних
+    # Create the user in the database
     new_user = await user_repo.create_user(body, hashed_password)
 
     verification_token = auth_service.create_jwt_token({"email": body.email}, scope="verification_token")
 
-    # Додаємо логування, щоб бачити токен
+    # Add logging to see the token
     logger.info(f"Generated verification token for {body.email}: {verification_token}")
     
-    # Створюємо токен і передаємо його у фонову задачу
+    # Create the token and pass it to a background task
     background_tasks.add_task(
         auth_service.send_confirmation_email, 
         new_user.email, 
@@ -70,6 +100,22 @@ async def signup(
 
 @router.post("/login")
 async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_async_session)):
+    """
+    Authenticates a user and provides an access token.
+
+    This endpoint validates the user's credentials and, if successful, returns a JWT
+    access token for subsequent authenticated requests.
+
+    Args:
+        body (OAuth2PasswordRequestForm): Form data containing the username and password.
+        db (AsyncSession): The database session dependency.
+
+    Returns:
+        dict: A dictionary containing the access token.
+
+    Raises:
+        HTTPException: If the email is invalid, the email is not confirmed, or the password is wrong.
+    """
     user_repo = UserRepository(db)
     user = await user_repo.get_user_by_username(body.username)
     auth_service = AuthService()
@@ -87,7 +133,7 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_asyn
         )
 
     access_token = auth_service.create_jwt_token(
-        # Ключ payload змінено на "email" для сумісності з `get_current_user`
+        # The payload key is changed to "email" for compatibility with `get_current_user`
         payload={"email": user.email}
     )
     return {"access_token": access_token}
@@ -95,14 +141,30 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_asyn
 
 @router.get("/confirmed_email/{token}")
 async def confirmed_email(token: str, db=Depends(get_async_session)):
+    """
+    Confirms a user's email address using a verification token.
+
+    This endpoint verifies the token received via email and updates the user's
+    'confirmed' status in the database.
+
+    Args:
+        token (str): The verification token from the email link.
+        db (AsyncSession): The database session dependency.
+
+    Returns:
+        dict: A message confirming the email confirmation status.
+
+    Raises:
+        HTTPException: If the token is invalid or the user is not found.
+    """
     user_repo = UserRepository(db)
     
-    # 1. Створюємо екземпляр AuthService
+    # Create an instance of AuthService
     auth_service = AuthService()
 
     email = await auth_service.decode_verification_token(token)
     
-    # 2. Використовуємо екземпляр user_repo для отримання користувача
+    # Use the user_repo instance to get the user
     user = await user_repo.get_user_by_email(email)
     
     if user is None:
@@ -112,16 +174,10 @@ async def confirmed_email(token: str, db=Depends(get_async_session)):
     if user.confirmed:
         return {"message": "Your email is already confirmed"}
 
-    # 3. Використовуємо екземпляр user_repo для оновлення користувача
+    # Use the user_repo instance to update the user
     await user_repo.change_confirmed_email(email)
     
     return {"message": "Email confirmed"}
-
-
-import logging
-import asyncio
-
-logger = logging.getLogger(__name__)
 
 
 @router.post("/request_email")
@@ -133,7 +189,23 @@ async def request_email(
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
-    Requests a new confirmation email for a user.
+    Requests a new confirmation email for an unconfirmed user.
+
+    This endpoint checks if the user exists and is not yet confirmed. If so, it
+    schedules a new confirmation email to be sent.
+
+    Args:
+        body (RequestEmailSchema): The schema containing the user's email.
+        background_tasks (BackgroundTasks): Dependency to run tasks in the background.
+        request (Request): The incoming request object.
+        db (AsyncSession): The database session dependency.
+        auth_service (AuthService): The authentication service dependency.
+
+    Returns:
+        dict: A message confirming that a new email has been sent.
+
+    Raises:
+        HTTPException: If the user is not found or their email is already confirmed.
     """
     user_repo = UserRepository(db)
     user = await user_repo.get_user_by_email(body.email)
@@ -162,12 +234,6 @@ async def request_email(
 
 
 
-# @router.get(
-#     "/me", response_model=User, description="No more than 10 requests per minute"
-# )
-# @limiter.limit("10/minute")
-# async def me(request: Request, user: User = Depends(get_current_user)):
-#     return user
 
 
 # @router.patch("/avatar", response_model=User)

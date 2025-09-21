@@ -37,11 +37,17 @@ async def get_all_users(
     limit: int = Query(100, ge=1, le=100),
 ):
     """
-    Retrieves all user with pagination.
+    Retrieves all users with pagination.
 
     This endpoint returns a paginated list of all users stored in the database.
-    - **skip**: The number of records to skip (for pagination).
-    - **limit**: The maximum number of records to return.
+
+    Args:
+        db (AsyncSession): The database session dependency.
+        skip (int): The number of records to skip (for pagination).
+        limit (int): The maximum number of records to return.
+
+    Returns:
+        List[UserResponseSchema]: A list of user objects.
     """
     user_repo = UserRepository(db)
     users = await user_repo.get_users(skip=skip, limit=limit)
@@ -51,13 +57,19 @@ async def get_all_users(
 @router.get("/{user_id}", response_model=UserResponseSchema)
 async def read_user(user_id: int, db: AsyncSession = Depends(get_async_session)):
     """
-    Retrieves a single user by its ID.
+    Retrieves a single user by their ID.
 
-    This endpoint returns a single user by its unique ID.
-    - **user_id**: The unique identifier of the user.
+    This endpoint returns a single user by their unique ID.
+
+    Args:
+        user_id (int): The unique identifier of the user.
+        db (AsyncSession): The database session dependency.
+
+    Returns:
+        UserResponseSchema: The user object.
 
     Raises:
-        HTTPException: If the contact with the specified ID is not found.
+        HTTPException: If the user with the specified ID is not found.
     """
     user_repo = UserRepository(db)
     db_user = await user_repo.get_user_by_id(user_id)
@@ -71,6 +83,23 @@ async def update_avatar_user(
     user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_session),
 ):
+    """
+    Updates the authenticated user's avatar.
+
+    This endpoint allows an authenticated user to upload a new avatar image. The image is
+    uploaded to Cloudinary and the user's avatar URL in the database is updated.
+
+    Args:
+        file (UploadFile): The avatar image file to be uploaded.
+        user (UserModel): The current authenticated user, obtained via dependency injection.
+        db (AsyncSession): The database session dependency.
+
+    Returns:
+        UserResponseSchema: The updated user object with the new avatar URL.
+
+    Raises:
+        HTTPException: If the file upload fails or the user is not found.
+    """
     avatar_url = UploadFileService(
         settings.CLD_NAME, settings.CLD_API_KEY, settings.CLD_API_SECRET
     ).upload_file(file, user.username)
