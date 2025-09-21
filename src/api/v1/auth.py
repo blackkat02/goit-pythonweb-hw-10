@@ -15,8 +15,9 @@ from src.schemas.users import (
 from src.schemas.auth import RequestEmailSchema
 from src.services.auth import AuthService, get_auth_service
 from src.database.models import UserModel
-from libgravatar import Gravatar
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.get(
