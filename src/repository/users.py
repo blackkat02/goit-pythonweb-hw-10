@@ -116,7 +116,6 @@ class UserRepository:
             await self.db.refresh(user)
         return user
     
-
     async def change_confirmed_email(self, email: str) -> None:
         stmt = update(UserModel).where(UserModel.email == email).values(confirmed=True)
         await self.db.execute(stmt)

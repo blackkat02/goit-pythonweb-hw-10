@@ -1,46 +1,39 @@
-# file: src/settings.py
-# from pydantic_settings import BaseSettings
-# # os не потрібен, pydantic_settings робить це автоматично
-
-# class Settings(BaseSettings):
-#     secret_key: str
-#     db_user: str
-#     db_pass: str
-#     db_name: str
-#     db_host: str
-#     db_port: int
-    
-#     class Config:
-#         env_file = ".env.docker"
-
-# # Create a single, reusable instance
-# settings = Settings()
-
-
+from pydantic import ConfigDict, EmailStr
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    secret_key: str
-    db_user: str
-    db_pass: str
-    db_name: str
-    db_host: str
-    db_port: int
+    # Database settings
+    DB_USER: str
+    DB_PASS: str
+    DB_NAME: str
+    DB_HOST: str
+    DB_PORT: int
     
-    # Налаштування для FastAPI-Mail
-    mail_username: str
-    mail_password: str
-    mail_from: str
-    mail_port: int
-    mail_server: str
-    mail_from_name: str
-    mail_starttls: bool
-    mail_ssl_tls: bool
-    mail_use_credentials: bool
-    mail_validate_certs: bool
+    # JWT/App secret key
+    SECRET_KEY: str
     
-    class Config:
-        env_file = ".env.docker"
+    # Email settings
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: EmailStr  # Використовуємо EmailStr для валідації email
+    MAIL_FROM_NAME: str
+    MAIL_PORT: int
+    MAIL_SERVER: str
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
+    MAIL_USE_CREDENTIALS: bool = True
+    MAIL_VALIDATE_CERTS: bool = True
+    
+    # Cloud settings
+    CLD_NAME: str
+    CLD_API_KEY: str  # Змінено з int на str, оскільки API ключі зазвичай рядки
+    CLD_API_SECRET: str
 
-# Create a single, reusable instance
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore"
+    )
+
 settings = Settings()

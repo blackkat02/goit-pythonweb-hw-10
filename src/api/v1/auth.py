@@ -1,9 +1,10 @@
 from fastapi import Depends, APIRouter, HTTPException, status, BackgroundTasks, Request
+from fastapi_limiter.depends import RateLimiter
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.db import get_async_session
 from src.repository.users import UserRepository
-from src.services.auth import AuthService, auth_service
+from src.services.auth import AuthService, get_current_user
 from src.schemas.users import (
     UserBaseSchema,
     UserCreateSchema,
@@ -13,10 +14,18 @@ from src.schemas.users import (
 )
 from src.schemas.auth import RequestEmailSchema
 from src.services.auth import AuthService, get_auth_service
+from src.database.models import UserModel
 from libgravatar import Gravatar
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+@router.get(
+    "/me",
+    response_model=UserResponseSchema,
+    dependencies=[Depends(RateLimiter(times=10, seconds=60))]
+)
+def read_current_user(current_user: UserModel = Depends(get_current_user)):
+    return current_user
 
 @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
 async def signup(
@@ -78,7 +87,8 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db=Depends(get_asyn
         )
 
     access_token = auth_service.create_jwt_token(
-        payload={"user_email": user.email}
+        # Ключ payload змінено на "email" для сумісності з `get_current_user`
+        payload={"email": user.email}
     )
     return {"access_token": access_token}
 
@@ -112,30 +122,6 @@ import logging
 import asyncio
 
 logger = logging.getLogger(__name__)
-
-# @router.post("/signup", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
-# async def signup(
-#     body: UserCreateSchema,
-#     background_tasks: BackgroundTasks,
-#     request: Request,
-#     db: AsyncSession = Depends(get_async_session),
-#     auth_service: AuthService = Depends(get_auth_service),
-# ):
-#     user_repo = UserRepository(db)
-
-#     hashed_password = auth_service.hash_password(body.password)
-#     # ... валідації, створення користувача ...
-#     new_user = await user_repo.create_user(body, hashed_password)
-
-#     # Лог перед плануванням
-#     logger.info("Scheduling confirmation email for user %s (%s)", new_user.username, new_user.email)
-
-#     # ВАРІАНТ A: асинхронна функція — обгорнути coroutine у task
-#     coro = auth_service.send_confirmation_email(email=new_user.email, username=new_user.username, host=str(request.base_url))
-#     background_tasks.add_task(asyncio.create_task, coro)
-#     logger.debug("BackgroundTasks: added asyncio.create_task for send_confirmation_email")
-
-#     return new_user
 
 
 @router.post("/request_email")
@@ -173,3 +159,28 @@ async def request_email(
     )
     
     return {"message": "New confirmation email sent"}
+
+
+
+# @router.get(
+#     "/me", response_model=User, description="No more than 10 requests per minute"
+# )
+# @limiter.limit("10/minute")
+# async def me(request: Request, user: User = Depends(get_current_user)):
+#     return user
+
+
+# @router.patch("/avatar", response_model=User)
+# async def update_avatar_user(
+#     file: UploadFile = File(),
+#     user: User = Depends(get_current_user),
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     avatar_url = UploadFileService(
+#         settings.CLD_NAME, settings.CLD_API_KEY, settings.CLD_API_SECRET
+#     ).upload_file(file, user.username)
+
+#     user_service = UserService(db)
+#     user = await user_service.update_avatar_url(user.email, avatar_url)
+
+#     return user

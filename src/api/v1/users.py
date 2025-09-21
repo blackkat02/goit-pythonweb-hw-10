@@ -23,7 +23,9 @@ from src.schemas.users import (
 from src.repository.users import UserRepository
 from src.services.auth import AuthService, get_current_user
 from src.database.models import UserModel
-from src.services.cloudinary_service import CloudinaryService
+from src.services.cloudinary_service import UploadFileService
+from src.settings import settings
+
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -63,20 +65,20 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_async_session))
         raise HTTPException(status_code=404, detail="User not found.")
     return db_user
 
-@router.patch("/avatar", response_model=UserResponseSchema)
-async def update_user_avatar(
-    file: UploadFile = File(...),
-    current_user: UserModel = Depends(get_current_user),
+@router.patch("/avatar", response_model=UserResponseSchema, status_code=status.HTTP_200_OK)
+async def update_avatar_user(
+    file: UploadFile = File(),
+    user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Updates the current user's avatar.
-    """
-    public_id = f"avatars/{current_user.id}"
-    image_url = CloudinaryService.upload_image(file.file, public_id)
+    avatar_url = UploadFileService(
+        settings.CLD_NAME, settings.CLD_API_KEY, settings.CLD_API_SECRET
+    ).upload_file(file, user.username)
+
     user_repo = UserRepository(db)
-    updated_user = await user_repo.update_user_avatar(current_user.id, image_url)
-    return updated_user
+    user = await user_repo.update_user_avatar(user.id, avatar_url)
+
+    return user
 
 
 # @router.patch("/{user_id}", response_model=UserResponseSchema)
